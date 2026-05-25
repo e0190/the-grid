@@ -4,7 +4,44 @@ import { useState, useEffect } from 'react';
 export default function Dashboard() {
   const [username, setUsername] = useState('');
   const [isRegistered, setIsRegistered] = useState(false);
-  const [code, setCode] = useState('<style>\n  body { background: #111; color: lime; font-family: monospace; }\n</style>\n\n<h1>My Custom Zone</h1>\n<p>Welcome to my corner of the grid.</p>');
+  const [code, setCode] = useState(`<style>
+  body {
+    background: linear-gradient(135deg, #0f0c20 0%, #06040a 100%);
+    color: #f3f1fe;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 90vh;
+    margin: 0;
+  }
+  .card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 3rem;
+    border-radius: 24px;
+    backdrop-filter: blur(20px);
+    text-align: center;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+    max-width: 400px;
+  }
+  h1 {
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin: 0 0 10px 0;
+    background: linear-gradient(90deg, #a855f7, #6366f1);
+    -webkit-background-clip: text;
+    -webkit-text-fillColor: transparent;
+  }
+  p { color: #8a8895; line-height: 1.6; }
+</style>
+
+<div class="card">
+  <h1>The Matrix</h1>
+  <p>Welcome to my custom sector on the grid. Built with raw code, compiled live through the repository engine.</p>
+</div>`);
+
   const [status, setStatus] = useState('');
   const [checkingName, setCheckingName] = useState(false);
 
@@ -24,13 +61,13 @@ export default function Dashboard() {
     }
     
     setCheckingName(true);
-    setStatus('Checking availability...');
+    setStatus('Securing node coordinates...');
 
     const res = await fetch(`/api/profile?username=${encodeURIComponent(username)}`);
     const data = await res.json();
 
     if (data.available) {
-      setStatus('Username available! Creating your canvas...');
+      setStatus('Coordinates clear. Allocating vault...');
       const createRes = await fetch('/api/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -40,18 +77,18 @@ export default function Dashboard() {
       if (createRes.ok) {
         localStorage.setItem('grid_username', username);
         setIsRegistered(true);
-        setStatus(`Username @${username} successfully claimed!`);
+        setStatus(`Identity secured: @${username}`);
       } else {
-        setStatus('Error locking username. Try again.');
+        setStatus('Error locking canvas. Try again.');
       }
     } else {
-      setStatus('That username is already taken. Try another.');
+      setStatus('Identity coordinates already claimed. Try another.');
     }
     setCheckingName(false);
   };
 
   const saveProfileChanges = async () => {
-    setStatus('Pushing updates to GitHub...');
+    setStatus('Syncing changes to GitHub...');
     const res = await fetch('/api/profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -59,70 +96,224 @@ export default function Dashboard() {
     });
     
     if (res.ok) {
-      setStatus(`Saved successfully! View live at /u/${username}`);
+      setStatus('Changes successfully committed to the main network.');
+      setTimeout(() => setStatus(''), 4000);
     } else {
       const errorMsg = await res.text();
-      setStatus(`Error: ${errorMsg}`);
+      setStatus(`Sync error: ${errorMsg}`);
     }
   };
 
+  // ONBOARDING FLOW: Claim Username
   if (!isRegistered) {
     return (
-      <div style={{ maxWidth: '450px', margin: '15vh auto', padding: '2rem', backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px', fontFamily: 'sans-serif' }}>
-        <h1 style={{ marginTop: 0 }}>Claim Your Identity</h1>
-        <p style={{ color: '#aaa' }}>Choose a completely unique username. This will lock your URL permanently on the network.</p>
-        
-        <form onSubmit={handleClaimUsername} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', background: '#222', border: '1px solid #444', borderRadius: '4px', paddingLeft: '10px' }}>
-            <span style={{ color: '#666', fontWeight: 'bold' }}>/u/</span>
-            <input 
-              type="text" 
-              placeholder="username" 
-              value={username}
-              onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))}
-              required
-              disabled={checkingName}
-              style={{ width: '100%', padding: '12px 10px', background: 'transparent', color: '#fff', border: 'none', outline: 'none' }}
-            />
-          </div>
-          <button type="submit" disabled={checkingName} style={{ padding: '12px', background: '#fff', color: '#000', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-            {checkingName ? 'Securing name...' : 'Claim Username'}
-          </button>
-        </form>
-        {status && <p style={{ marginTop: '1rem', color: '#0ff', fontSize: '0.9rem' }}>{status}</p>}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        height: '100vh', 
+        background: '#030303',
+        fontFamily: 'sans-serif'
+      }}>
+        <div style={{ 
+          maxWidth: '420px', 
+          width: '100%',
+          padding: '3rem 2.5rem', 
+          backgroundColor: '#0a0a0a', 
+          border: '1px solid #161616', 
+          borderRadius: '16px',
+          boxShadow: '0 30px 60px rgba(0,0,0,0.8)'
+        }}>
+          <h1 style={{ fontSize: '1.8rem', fontWeight: '700', margin: '0 0 10px 0', letterSpacing: '-0.5px' }}>Claim Your Identity</h1>
+          <p style={{ color: '#555', fontSize: '0.95rem', margin: '0 0 2rem 0', lineHeight: '1.5' }}>
+            Choose a unique username to allocate your permanent routing space on the grid network.
+          </p>
+          
+          <form onSubmit={handleClaimUsername} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              background: '#121212', 
+              border: '1px solid #222', 
+              borderRadius: '8px', 
+              paddingLeft: '14px',
+              transition: 'border-color 0.2s ease'
+            }}>
+              <span style={{ color: '#444', fontWeight: '600', fontSize: '0.95rem', userSelect: 'none' }}>/u/</span>
+              <input 
+                type="text" 
+                placeholder="username" 
+                value={username}
+                onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase())}
+                required
+                disabled={checkingName}
+                style={{ 
+                  width: '100%', 
+                  padding: '14px 10px', 
+                  background: 'transparent', 
+                  color: '#fff', 
+                  border: 'none', 
+                  outline: 'none',
+                  fontSize: '0.95rem',
+                  letterSpacing: '0.5px'
+                }}
+              />
+            </div>
+            <button 
+              type="submit" 
+              disabled={checkingName} 
+              style={{ 
+                padding: '14px', 
+                background: '#fff', 
+                color: '#000', 
+                border: 'none', 
+                borderRadius: '8px', 
+                cursor: 'pointer', 
+                fontWeight: '600',
+                fontSize: '0.95rem',
+                boxShadow: '0 4px 12px rgba(255,255,255,0.1)'
+              }}
+            >
+              {checkingName ? 'Reserving...' : 'Claim Canvas'}
+            </button>
+          </form>
+          {status && (
+            <div style={{ marginTop: '1.5rem', padding: '10px 12px', background: '#111', border: '1px solid #222', borderRadius: '6px' }}>
+              <p style={{ margin: 0, color: '#00ffcc', fontSize: '0.85rem', fontFamily: 'monospace' }}>{status}</p>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
 
+  // ULTRA-POLISHED PREMIUM WORKSPACE INTERFACE
   return (
-    <div style={{ maxWidth: '800px', margin: '5vh auto', padding: '2rem', fontFamily: 'sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <div>
-          <h1 style={{ margin: 0 }}>Editing: @{username}</h1>
-          <p style={{ color: '#aaa', margin: '5px 0 0 0' }}>Your profile URL is active at <strong>/u/{username}</strong></p>
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: '100vh', 
+      background: '#080808', 
+      color: '#fff',
+      fontFamily: 'sans-serif'
+    }}>
+      
+      {/* TOP CONTROL BAR */}
+      <header style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        padding: '0 1.5rem', 
+        height: '64px', 
+        background: '#0d0d0d', 
+        borderBottom: '1px solid #1a1a1a' 
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ff5f56' }}></span>
+            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ffbd2e' }}></span>
+            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#27c93f' }}></span>
+          </div>
+          <div style={{ height: '16px', width: '1px', background: '#222' }}></div>
+          <div>
+            <span style={{ color: '#666', fontSize: '0.85rem', fontWeight: '500' }}>WORKSPACE /</span>
+            <strong style={{ color: '#fff', fontSize: '0.85rem', marginLeft: '4px', letterSpacing: '0.5px' }}>@{username}</strong>
+          </div>
         </div>
-        <button 
-          onClick={() => { localStorage.clear(); window.location.reload(); }}
-          style={{ background: 'transparent', color: '#ff4444', border: '1px solid #ff4444', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' }}
-        >
-          Change Account
-        </button>
-      </div>
-      
-      <textarea 
-        value={code}
-        onChange={(e) => setCode(e.target.value)}
-        style={{ width: '100%', height: '400px', background: '#111', color: '#0f0', border: '1px solid #333', padding: '1rem', fontFamily: 'monospace', marginBottom: '1rem', borderRadius: '4px', outline: 'none' }}
-      />
-      
-      <button 
-        onClick={saveProfileChanges}
-        style={{ padding: '12px 24px', background: '#fff', color: '#000', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-      >
-        Commit to Network
-      </button>
 
-      {status && <p style={{ marginTop: '1rem', color: '#0ff' }}>{status}</p>}
+        {/* STATUS BAR INDICATION */}
+        {status && (
+          <div style={{ fontSize: '0.85rem', color: '#a855f7', fontFamily: 'monospace', background: 'rgba(168,85,247,0.05)', padding: '6px 14px', borderRadius: '20px', border: '1px solid rgba(168,85,247,0.15)' }}>
+            {status}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button 
+            onClick={saveProfileChanges}
+            style={{ 
+              background: '#fff', 
+              color: '#000', 
+              border: 'none', 
+              padding: '8px 18px', 
+              borderRadius: '6px', 
+              cursor: 'pointer', 
+              fontWeight: '600',
+              fontSize: '0.85rem',
+              boxShadow: '0 4px 12px rgba(255,255,255,0.05)'
+            }}
+          >
+            Commit Changes
+          </button>
+          <button 
+            onClick={() => { localStorage.clear(); window.location.reload(); }}
+            style={{ 
+              background: 'transparent', 
+              color: '#ff4444', 
+              border: '1px solid rgba(255, 68, 68, 0.2)', 
+              padding: '7px 14px', 
+              borderRadius: '6px', 
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              fontWeight: '500'
+            }}
+          >
+            Disconnect
+          </button>
+        </div>
+      </header>
+
+      {/* SPLIT SCREEN MAIN VIEW */}
+      <main style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        
+        {/* LEFT PANEL: The Code Sandbox Editor */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#0a0a0a', borderRight: '1px solid #1a1a1a' }}>
+          <div style={{ display: 'flex', alignItems: 'center', height: '36px', background: '#0e0e0e', padding: '0 1rem', borderBottom: '1px solid #141414' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#555', letterSpacing: '1px', fontFamily: 'monospace' }}>SOURCE.HTML</span>
+          </div>
+          <textarea 
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            spellCheck="false"
+            style={{ 
+              flex: 1,
+              width: '100%', 
+              background: '#0a0a0a', 
+              color: '#a6e22e', 
+              border: 'none', 
+              padding: '1.5rem', 
+              fontFamily: 'Courier New, monospace', 
+              fontSize: '0.95rem',
+              lineHeight: '1.6',
+              outline: 'none', 
+              resize: 'none',
+              tabSize: 2
+            }}
+          />
+        </div>
+
+        {/* RIGHT PANEL: Safe Live Preview Frame */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#111' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '36px', background: '#0e0e0e', padding: '0 1rem', borderBottom: '1px solid #141414' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#555', letterSpacing: '1px', fontFamily: 'monospace' }}>LIVE_NETWORK_PREVIEW</span>
+            <span style={{ fontSize: '0.75rem', color: '#444', fontFamily: 'monospace' }}>yourdomain.com/u/{username}</span>
+          </div>
+          <div style={{ flex: 1, position: 'relative', background: '#fff' }}>
+            <iframe 
+              srcDoc={code}
+              title="Grid Live Preview"
+              sandbox="allow-popups" // Allows normal styles and layouts, but drops JS manipulation capabilities out of preview pane natively
+              style={{
+                width: '100%',
+                height: '100%',
+                border: 'none',
+                background: '#fff'
+              }}
+            />
+          </div>
+        </div>
+
+      </main>
     </div>
   );
 }

@@ -10,7 +10,7 @@ export default function Home() {
         <h2 style={{ margin: '0 0 1rem 0' }}>Create a profile?</h2>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
           <Link href="/api/auth/signin" style={{ padding: '10px 20px', background: '#fff', color: '#000', textDecoration: 'none', borderRadius: '4px', fontWeight: 'bold' }}>
-            YES (Log in with GitHub)
+            YES (Log in with Google)
           </Link>
         </div>
       </div>

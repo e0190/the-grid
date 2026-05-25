@@ -1,48 +1,62 @@
 import DOMPurify from 'isomorphic-dompurify';
 
 export default async function UserProfile({ params }) {
-  // Direct unpack of parameters
-  const { username } = await params;
+  // Fix 1: Properly await the asynchronous route parameters
+  const resolvedParams = await params;
+  const username = resolvedParams?.username;
   
+  if (!username) {
+    return (
+      <div style={{ background: '#000', color: '#fff', minHeight: '100vh', padding: '40px', fontFamily: 'sans-serif' }}>
+        <p>Invalid account route parameter.</p>
+      </div>
+    );
+  }
+
   const owner = process.env.GITHUB_DB_OWNER;
   const repo = process.env.GITHUB_DB_REPO;
   const cleanName = username.toLowerCase().trim();
 
-  // The direct web URL pointing straight to your profiles folder file
+  // Direct raw source URL mapping
   const githubRawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/profiles/${cleanName}.html`;
 
   let rawHTML = '';
   try {
-    // cache: 'no-store' forces Vercel to look at your repo immediately instead of caching the old 404
     const res = await fetch(githubRawUrl, { cache: 'no-store' });
     
     if (res.ok) {
       rawHTML = await res.text();
     } else {
-      rawHTML = `
-        <div style="text-align:center; padding: 100px 20px; font-family:system-ui, sans-serif; background:#000; color:#fff; min-height:100vh; box-sizing:border-box;">
-          <h1 style="font-size:3rem; margin:0 0 10px 0;">404</h1>
-          <p style="color:#666; margin:0 0 20px 0;">Profile for <strong>@${username}</strong> not found on the database.</p>
-          <p style="font-size:0.8rem; color:#333; font-family:monospace;">Target: ${githubRawUrl}</p>
+      // If the file is physically missing, display a clean status layout
+      return (
+        <div style={{ textAlign: 'center', padding: '100px 20px', fontFamily: 'system-ui, sans-serif', background: '#000', color: '#fff', minHeight: '100vh', boxSizing: 'border-box' }}>
+          <h1 style={{ fontSize: '3rem', margin: '0 0 10px 0' }}>404</h1>
+          <p style={{ color: '#666', margin: '0 0 20px 0' }}>Profile for <strong>@${username}</strong> not found.</p>
+          <p style={{ fontSize: '0.8rem', color: '#222', fontFamily: 'monospace' }}>Path: profiles/${cleanName}.html</p>
         </div>
-      `;
+      );
     }
   } catch (error) {
-    rawHTML = `
-      <div style="text-align:center; padding: 100px 20px; font-family:system-ui, sans-serif; background:#000; color:#fff; min-height:100vh; box-sizing:border-box;">
-        <p style="color:#ff4444;">Database connection error.</p>
+    return (
+      <div style={{ textAlign: 'center', padding: '100px 20px', fontFamily: 'system-ui, sans-serif', background: '#000', color: '#fff', minHeight: '100vh' }}>
+        <p style={{ color: '#ff4444' }}>Database target connection timeout.</p>
       </div>
-    `;
+    );
   }
 
-  // Scrub any active script injections but leave custom styles intact
-  const cleanProfileHTML = DOMPurify.sanitize(rawHTML, {
-    FORCE_BODY: true, 
-    ADD_TAGS: ['style', 'marquee', 'center'], 
-  });
+  // Fix 2: Wrap execution safely to handle pure text fallback if sanitization acts up
+  let cleanProfileHTML = '';
+  try {
+    cleanProfileHTML = DOMPurify.sanitize(rawHTML, {
+      FORCE_BODY: true, 
+      ADD_TAGS: ['style', 'marquee', 'center'], 
+    });
+  } catch (e) {
+    cleanProfileHTML = rawHTML;
+  }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#000' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#000', color: '#fff' }}>
       <div dangerouslySetInnerHTML={{ __html: cleanProfileHTML }} />
     </div>
   );

@@ -11,10 +11,10 @@ export default async function UserProfile({ params }) {
     if (res.ok) {
       rawHTML = await res.text();
     } else {
-      rawHTML = `<div style="text-align:center; padding: 50px;"><h1>404</h1><p>Profile not found on the Grid.</p></div>`;
+      rawHTML = `<div style="text-align:center; padding: 50px; font-family:sans-serif;"><h1>404</h1><p>Profile not found on the Grid.</p></div>`;
     }
   } catch (error) {
-    rawHTML = `<p>Error connecting to the Grid.</p>`;
+    rawHTML = `<p style="font-family:sans-serif; text-align:center; padding:50px;">Error connecting to the Grid.</p>`;
   }
 
   const cleanProfileHTML = DOMPurify.sanitize(rawHTML, {

@@ -8,7 +8,6 @@ export default function Dashboard() {
   const [status, setStatus] = useState('');
   const [checkingName, setCheckingName] = useState(false);
 
-  // Read saved username locally if they've already completed onboarding
   useEffect(() => {
     const savedName = localStorage.getItem('grid_username');
     if (savedName) {
@@ -32,7 +31,6 @@ export default function Dashboard() {
 
     if (data.available) {
       setStatus('Username available! Creating your canvas...');
-      // Initialize the repository file with default boilerplate code
       const createRes = await fetch('/api/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -68,7 +66,6 @@ export default function Dashboard() {
     }
   };
 
-  // STEP 1: Onboarding Flow (Choose Username)
   if (!isRegistered) {
     return (
       <div style={{ maxWidth: '450px', margin: '15vh auto', padding: '2rem', backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px', fontFamily: 'sans-serif' }}>
@@ -77,7 +74,7 @@ export default function Dashboard() {
         
         <form onSubmit={handleClaimUsername} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           <div style={{ display: 'flex', alignItems: 'center', background: '#222', border: '1px solid #444', borderRadius: '4px', paddingLeft: '10px' }}>
-            <span style={{ color: '#666', fontWeight: 'bold' }}>thegrid.com/u/</span>
+            <span style={{ color: '#666', fontWeight: 'bold' }}>/u/</span>
             <input 
               type="text" 
               placeholder="username" 
@@ -97,7 +94,6 @@ export default function Dashboard() {
     );
   }
 
-  // STEP 2: The Core Code Editor Interface
   return (
     <div style={{ maxWidth: '800px', margin: '5vh auto', padding: '2rem', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>

@@ -1,16 +1,17 @@
-'use client';
-import { SessionProvider } from "next-auth/react";
+import { Providers } from "./providers";
+
+export const metadata = {
+  title: 'The Grid',
+  description: 'Create and share your own custom HTML profile page.',
+};
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <head>
-        <title>The Grid</title>
-      </head>
       <body style={{ margin: 0, padding: 0, boxSizing: 'border-box', backgroundColor: '#000', color: '#fff', fontFamily: 'system-ui, sans-serif' }}>
-        <SessionProvider>
+        <Providers>
           {children}
-        </SessionProvider>
+        </Providers>
       </body>
     </html>
   );

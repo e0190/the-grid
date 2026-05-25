@@ -1,59 +1,46 @@
 export default async function UserProfile({ params }) {
-  // Await params safely to support all modern Next.js versions
   const resolvedParams = await params;
-  const username = resolvedParams?.username;
+  const username = resolvedParams?.username || 'no-username-found';
   
-  if (!username) {
-    return (
-      <div style={{ background: '#000', color: '#fff', minHeight: '100vh', padding: '20px', fontFamily: 'sans-serif' }}>
-        <p>Error: No username provided in the URL route.</p>
-      </div>
-    );
-  }
+  const owner = process.env.GITHUB_DB_OWNER || 'missing-owner-env';
+  const repo = process.env.GITHUB_DB_REPO || 'missing-repo-env';
+  const pat = process.env.GITHUB_PAT ? 'present' : 'missing-pat-env';
+  
+  const githubRawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/profiles/${username.toLowerCase().trim()}.html`;
 
-  const owner = process.env.GITHUB_DB_OWNER;
-  const repo = process.env.GITHUB_DB_REPO;
-  const cleanName = username.toLowerCase().trim();
+  let debugStatus = 'Not started';
+  let fileContent = '';
 
-  // URL pointing directly to the raw text inside your database repository
-  const githubRawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/profiles/${cleanName}.html`;
-
-  let rawHTML = '';
   try {
-    // cache: 'no-store' tells Vercel to fetch fresh data on every single page view
     const res = await fetch(githubRawUrl, { cache: 'no-store' });
-    
+    debugStatus = `Fetch status code: ${res.status} (${res.statusText})`;
     if (res.ok) {
-      rawHTML = await res.text();
-    } else {
-      return (
-        <div style={{ textAlign: 'center', padding: '100px 20px', fontFamily: 'system-ui, sans-serif', background: '#000', color: '#fff', minHeight: '100vh', boxSizing: 'border-box' }}>
-          <h1 style={{ fontSize: '3rem', margin: '0 0 10px 0' }}>404</h1>
-          <p style={{ color: '#666', margin: '0 0 20px 0' }}>The profile for <strong>@${username}</strong> does not exist.</p>
-          <p style={{ fontSize: '0.8rem', color: '#222', fontFamily: 'monospace' }}>Looking for: profiles/${cleanName}.html</p>
-        </div>
-      );
+      fileContent = await res.text();
     }
   } catch (error) {
-    return (
-      <div style={{ textAlign: 'center', padding: '100px 20px', fontFamily: 'system-ui, sans-serif', background: '#000', color: '#fff', minHeight: '100vh' }}>
-        <p style={{ color: '#ff4444' }}>Failed to connect to the GitHub database repository.</p>
-      </div>
-    );
-  }
-
-  // If the file downloaded but contains absolutely nothing, show a message
-  if (!rawHTML || rawHTML.trim().length === 0) {
-    return (
-      <div style={{ textAlign: 'center', padding: '100px 20px', fontFamily: 'system-ui, sans-serif', background: '#000', color: '#fff', minHeight: '100vh' }}>
-        <p style={{ color: '#666' }}>This profile exists, but it has no layout content inside it yet.</p>
-      </div>
-    );
+    debugStatus = `Fetch crashed. Error message: ${error.message}`;
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#000', color: '#fff' }}>
-      <div dangerouslySetInnerHTML={{ __html: rawHTML }} />
+    <div style={{ background: '#111', color: '#fff', padding: '40px', fontFamily: 'monospace', minHeight: '100vh', lineHieght: '1.6' }}>
+      <h1 style={{ color: '#ff4444', borderBottom: '1px solid #333', paddingBottom: '10px' }}>System Diagnostics</h1>
+      
+      <p><strong>Requested Username:</strong> {username}</p>
+      <p><strong>Database Owner:</strong> {owner}</p>
+      <p><strong>Database Repo:</strong> {repo}</p>
+      <p><strong>GitHub Token (PAT):</strong> {pat}</p>
+      <p><strong>Target URL:</strong> <a href={githubRawUrl} style={{ color: '#00ffcc' }} target="_blank">{githubRawUrl}</a></p>
+      
+      <hr style={{ border: 'none', height: '1px', background: '#333', margin: '20px 0' }} />
+      
+      <p><strong>Network Fetch Result:</strong> {debugStatus}</p>
+      
+      <hr style={{ border: 'none', height: '1px', background: '#333', margin: '20px 0' }} />
+      
+      <p><strong>Raw Downloaded Content:</strong></p>
+      <pre style={{ background: '#000', padding: '20px', border: '1px solid #222', borderRadius: '4px', overflowX: 'auto', whiteSpace: 'pre-wrap' }}>
+        {fileContent || '[ No text content was returned from the file ]'}
+      </pre>
     </div>
   );
 }

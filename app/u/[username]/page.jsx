@@ -1,46 +1,49 @@
+import fs from 'fs';
+import path from 'path';
+
 export default async function UserProfile({ params }) {
   const resolvedParams = await params;
-  const username = resolvedParams?.username || 'no-username-found';
+  const username = resolvedParams?.username;
   
-  const owner = process.env.GITHUB_DB_OWNER || 'missing-owner-env';
-  const repo = process.env.GITHUB_DB_REPO || 'missing-repo-env';
-  const pat = process.env.GITHUB_PAT ? 'present' : 'missing-pat-env';
-  
-  const githubRawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/profiles/${username.toLowerCase().trim()}.html`;
+  if (!username) {
+    return (
+      <div style={{ background: '#000', color: '#fff', minHeight: '100vh', padding: '20px', fontFamily: 'sans-serif' }}>
+        <p>Error: No username provided.</p>
+      </div>
+    );
+  }
 
-  let debugStatus = 'Not started';
-  let fileContent = '';
+  const cleanName = username.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
+  const filePath = path.join(process.cwd(), 'profiles', `${cleanName}.html`);
 
-  try {
-    const res = await fetch(githubRawUrl, { cache: 'no-store' });
-    debugStatus = `Fetch status code: ${res.status} (${res.statusText})`;
-    if (res.ok) {
-      fileContent = await res.text();
-    }
-  } catch (error) {
-    debugStatus = `Fetch crashed. Error message: ${error.message}`;
+  let rawHTML = '';
+
+  // Check if the file exists in the project folder
+  if (fs.existsSync(filePath)) {
+    rawHTML = fs.readFileSync(filePath, 'utf-8');
+  } else {
+    return (
+      <div style={{ textAlign: 'center', padding: '100px 20px', fontFamily: 'system-ui, sans-serif', background: '#000', color: '#fff', minHeight: '100vh', boxSizing: 'border-box' }}>
+        <h1 style={{ fontSize: '3rem', margin: '0 0 10px 0' }}>404</h1>
+        <p style={{ color: '#666', margin: '0 0 20px 0' }}>The profile for <strong>@${username}</strong> does not exist.</p>
+      </div>
+    );
+  }
+
+  // Strip out the internal tracking comment before rendering
+  const cleanHTML = rawHTML.replace(//g, '');
+
+  if (!cleanHTML || cleanHTML.trim().length === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: '100px 20px', fontFamily: 'system-ui, sans-serif', background: '#000', color: '#fff', minHeight: '100vh' }}>
+        <p style={{ color: '#666' }}>This profile exists, but it has no content.</p>
+      </div>
+    );
   }
 
   return (
-    <div style={{ background: '#111', color: '#fff', padding: '40px', fontFamily: 'monospace', minHeight: '100vh', lineHieght: '1.6' }}>
-      <h1 style={{ color: '#ff4444', borderBottom: '1px solid #333', paddingBottom: '10px' }}>System Diagnostics</h1>
-      
-      <p><strong>Requested Username:</strong> {username}</p>
-      <p><strong>Database Owner:</strong> {owner}</p>
-      <p><strong>Database Repo:</strong> {repo}</p>
-      <p><strong>GitHub Token (PAT):</strong> {pat}</p>
-      <p><strong>Target URL:</strong> <a href={githubRawUrl} style={{ color: '#00ffcc' }} target="_blank">{githubRawUrl}</a></p>
-      
-      <hr style={{ border: 'none', height: '1px', background: '#333', margin: '20px 0' }} />
-      
-      <p><strong>Network Fetch Result:</strong> {debugStatus}</p>
-      
-      <hr style={{ border: 'none', height: '1px', background: '#333', margin: '20px 0' }} />
-      
-      <p><strong>Raw Downloaded Content:</strong></p>
-      <pre style={{ background: '#000', padding: '20px', border: '1px solid #222', borderRadius: '4px', overflowX: 'auto', whiteSpace: 'pre-wrap' }}>
-        {fileContent || '[ No text content was returned from the file ]'}
-      </pre>
+    <div style={{ minHeight: '100vh', backgroundColor: '#000', color: '#fff' }}>
+      <div dangerouslySetInnerHTML={{ __html: cleanHTML }} />
     </div>
   );
 }

@@ -1,9 +1,11 @@
-import { Octokit } from '@octokit/rest';
+import fs from 'fs';
+import path from 'path';
 import { getServerSession } from 'next-auth';
 
-const getProfilePath = (username) => {
+// Helper to get the absolute path to the profiles folder
+const getProfileFilePath = (username) => {
   const cleanName = username.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
-  return `profiles/${cleanName}.html`;
+  return path.join(process.cwd(), 'profiles', `${cleanName}.html`);
 };
 
 export async function GET(req) {
@@ -11,21 +13,13 @@ export async function GET(req) {
   const username = searchParams.get('username');
   if (!username) return new Response('Missing username', { status: 400 });
 
-  const octokit = new Octokit({ auth: process.env.GITHUB_PAT });
-  
-  try {
-    await octokit.repos.getContent({
-      owner: process.env.GITHUB_DB_OWNER,
-      repo: process.env.GITHUB_DB_REPO,
-      path: getProfilePath(username),
-    });
+  const filePath = getProfileFilePath(username);
+
+  // Check if file exists locally on the server disk
+  if (fs.existsSync(filePath)) {
     return new Response(JSON.stringify({ available: false }), { status: 200 });
-  } catch (error) {
-    if (error.status === 404) {
-      return new Response(JSON.stringify({ available: true }), { status: 200 });
-    }
-    return new Response(JSON.stringify({ error: 'Database error' }), { status: 500 });
   }
+  return new Response(JSON.stringify({ available: true }), { status: 200 });
 }
 
 export async function POST(req) {
@@ -37,42 +31,24 @@ export async function POST(req) {
   const { username, htmlContent } = await req.json();
   if (!username) return new Response('Username required', { status: 400 });
 
-  const octokit = new Octokit({ auth: process.env.GITHUB_PAT });
-  const owner = process.env.GITHUB_DB_OWNER;
-  const repo = process.env.GITHUB_DB_REPO;
-  const path = getProfilePath(username);
+  const filePath = getProfileFilePath(username);
+  const dirPath = path.dirname(filePath);
 
-  try {
-    let sha;
-    try {
-      const { data } = await octokit.repos.getContent({ owner, repo, path });
-      sha = data.sha;
-      
-      const fileContent = Buffer.from(data.content, 'base64').toString('utf-8');
-      if (!fileContent.includes(``)) {
-        return new Response('This username belongs to someone else.', { status: 403 });
-      }
-    } catch (e) {
-      try {
-        const checkRes = await octokit.repos.getContent({ owner, repo, path });
-        if (checkRes.data) return new Response('Username locked by another process', { status: 400 });
-      } catch (err) {}
-    }
-
-    const finalStoredContent = `\n${htmlContent}`;
-
-    await octokit.repos.createOrUpdateFileContents({
-      owner, 
-      repo, 
-      path,
-      message: `Grid Update: Profile committed for @${username}`,
-      content: Buffer.from(finalStoredContent).toString('base64'),
-      sha
-    });
-
-    return new Response(JSON.stringify({ success: true, username }), { status: 200 });
-  } catch (error) {
-    console.error(error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  // Ensure the profiles directory exists
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
   }
+
+  const trackingComment = `\n`;
+
+  if (fs.existsSync(filePath)) {
+    const fileContent = fs.readFileSync(filePath, 'utf-8');
+    if (!fileContent.includes(``)) {
+      return new Response('This username belongs to someone else.', { status: 403 });
+    }
+  }
+
+  // Write the file directly to the local disk
+  fs.writeFileSync(filePath, trackingComment + htmlContent, 'utf-8');
+  return new Response(JSON.stringify({ success: true, username }), { status: 200 });
 }
